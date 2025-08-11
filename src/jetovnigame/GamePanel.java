@@ -23,7 +23,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private final String tipoNave;  // NOVO: Armazena o tipo de nave
     private final int LARGURA = JetOvni.LARGURA;
     private final int ALTURA = JetOvni.ALTURA;
-    
+    private int tickCount = 0;  // nave pisca enquanto estiver invencivel
     // NOVO: Defina aqui o limite inferior da tela (ajuste este valor se precisar)
     private final int LIMITE_INFERIOR = 550; 
 
@@ -76,6 +76,7 @@ public class GamePanel extends JPanel implements ActionListener {
         gameLoop = new Timer(1000 / 60, this);
         gameLoop.start();
     }
+    
 
     private void inicializarObjetos() {
         // CORRIGIDO: Usa o tipoNave para carregar a imagem correta
@@ -120,52 +121,58 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
+public void paintComponent(Graphics g) {
+    super.paintComponent(g);
+    Graphics2D g2d = (Graphics2D) g;
 
-        fundo1.desenhar(g2d);
-        fundo2.desenhar(g2d);
+    // Desenha o fundo
+    fundo1.desenhar(g2d);
+    fundo2.desenhar(g2d);
+    
+    // Desenha Power-ups, Tiros, Obstáculos
+    for (PowerUp powerUp : powerUps) {
+        powerUp.desenhar(g2d);
+    }
+    for (Bullet tiro : tiros) {
+        tiro.desenhar(g2d);
+    }
+    for (Bullet tiro : tirosInimigos) {
+        tiro.desenhar(g2d);
+    }
+    for (Obstaculo obstaculo : obstaculos) {
+        obstaculo.desenhar(g2d);
+    }
 
-        if (jogador != null) {
-            jogador.desenhar(g2d);
+    // === TRECHO CORRIGIDO ===
+    // Verifica se a nave deve ser desenhada (invencibilidade)
+    if (jogador != null && (!jogador.isInvencivel() || (tickCount % 10 < 5))) {
+        // Desenha a nave
+        jogador.desenhar(g2d);
 
-            if (jogador instanceof Jet && ((Jet) jogador).temEscudo()) {
-                Image escudo = CarregadorDeImagens.carregarImagem("powerup_escudo.png");
-                if (escudo != null) {
-                    g2d.drawImage(escudo, jogador.x, jogador.y, jogador.largura, jogador.altura, this);
-                }
+        // Se a nave tiver escudo, desenha o escudo por cima
+        if (jogador instanceof Jet && ((Jet) jogador).temEscudo()) {
+            Image escudo = CarregadorDeImagens.carregarImagem("powerup_escudo.png");
+            if (escudo != null) {
+                g2d.drawImage(escudo, jogador.x, jogador.y, jogador.largura, jogador.altura, this);
             }
         }
-
-        for (Bullet tiro : tiros) {
-            tiro.desenhar(g2d);
-        }
-
-        for (Bullet tiro : tirosInimigos) {
-            tiro.desenhar(g2d);
-        }
-
-        for (Obstaculo obstaculo : obstaculos) {
-            obstaculo.desenhar(g2d);
-        }
-
-        for (Explosao explosao : explosoes) {
-            explosao.desenhar(g2d);
-        }
-
-        for (PowerUp powerUp : powerUps) {
-            powerUp.desenhar(g2d);
-        }
-
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 18));
-        g2d.drawString("Pontuação: " + score, 10, 25);
-        g2d.drawString("Vidas: " + jogador.getSaude(), 10, 50);
-        g2d.drawString("Nível: " + dificuldade, 10, 75);
-        
-        g.dispose();
     }
+    // ========================
+
+    // Desenha as explosões
+    for (Explosao explosao : explosoes) {
+        explosao.desenhar(g2d);
+    }
+
+    // Desenha a HUD
+    g2d.setColor(Color.WHITE);
+    g2d.setFont(new Font("Arial", Font.BOLD, 18));
+    g2d.drawString("Pontuação: " + score, 10, 25);
+    g2d.drawString("Vidas: " + jogador.getSaude(), 10, 50);
+    g2d.drawString("Nível: " + dificuldade, 10, 75);
+    
+    g.dispose();
+}
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -176,6 +183,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     // === MÉTODO updateGame() ===
 private void updateGame() {
+    tickCount++;
     jogador.mover();
     fundo1.mover();
     fundo2.mover();
@@ -196,6 +204,10 @@ private void updateGame() {
     }
     if (jogador.isInvencivel() && (System.currentTimeMillis() - jogador.getTempoInicioInvencibilidade() > jogador.getDuracaoInvencibilidade())) {
         jogador.setInvencivel(false);
+        
+        // ADICIONE ESTA LINHA TEMPORARIAMENTE
+    System.out.println("Invencibilidade terminou!");
+
     }
     // ========================================
 
@@ -359,6 +371,9 @@ private void reiniciarPosicaoJogador() {
     jogador.setX(LARGURA / 2 - jogador.getLargura() / 2);
     jogador.setY(ALTURA - 100);
     jogador.setInvencivel(true);
+    
+    // ADICIONE ESTA LINHA TEMPORARIAMENTE
+    System.out.println("Nave respawnou e está invencível!");
 }
 
 private void tocarSomExplosao() {
