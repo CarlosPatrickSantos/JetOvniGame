@@ -174,185 +174,206 @@ public class GamePanel extends JPanel implements ActionListener {
         repaint();
     }
 
-    private void updateGame() {
-        jogador.mover();
+    // === MÉTODO updateGame() ===
+private void updateGame() {
+    jogador.mover();
+    fundo1.mover();
+    fundo2.mover();
 
-        fundo1.mover();
-        fundo2.mover();
-
-        if (fundo1.getY() >= ALTURA) {
-            fundo1.setY(-fundo1.getAltura());
-        }
-        if (fundo2.getY() >= ALTURA) {
-            fundo2.setY(-fundo2.getAltura());
-        }
-
-        if (jogador instanceof Jet) {
-            Jet jetPlayer = (Jet) jogador;
-            if (jetPlayer.temEscudo() && (System.currentTimeMillis() - jetPlayer.getTempoAtivacaoEscudo() > jetPlayer.getDuracaoEscudo())) {
-                jetPlayer.desativarEscudo();
-            }
-        }
-
-        for (Explosao explosao : explosoes) {
-            explosao.atualizar();
-        }
-        explosoes.removeIf(Explosao::isAnimacaoConcluida);
-
-        for (Bullet tiro : tiros) {
-            tiro.mover();
-        }
-        tiros.removeIf(tiro -> tiro.getY() < 0);
-
-        for (Bullet tiro : tirosInimigos) {
-            tiro.mover();
-        }
-        tirosInimigos.removeIf(tiro -> tiro.getY() > ALTURA);
-
-        for (Obstaculo obstaculo : obstaculos) {
-            if (obstaculo instanceof OvniAtirador) {
-                OvniAtirador ovni = (OvniAtirador) obstaculo;
-                if (ovni.podeAtirar()) {
-                    tirosInimigos.add(ovni.atirar());
-                }
-            }
-        }
-        
-        for (Obstaculo obstaculo : obstaculos) {
-            obstaculo.mover();
-        }
-        obstaculos.removeIf(obstaculo -> obstaculo.getY() > ALTURA);
-
-        for (PowerUp powerUp : powerUps) {
-            powerUp.mover();
-        }
-        powerUps.removeIf(powerUp -> powerUp.getY() > ALTURA);
-
-        if (random.nextInt(200) < 1) {
-            int xPos = random.nextInt(LARGURA - 40);
-            int velocidade = 1;
-            String nomeImagem = nomesDePowerUps[random.nextInt(nomesDePowerUps.length)];
-            powerUps.add(new PowerUp(xPos, 0, velocidade, nomeImagem));
-        }
-
-        if (random.nextInt(100) < 5 + dificuldade) {
-            int xPos = random.nextInt(LARGURA - 40);
-            int velocidade = random.nextInt(dificuldade) + 2;
-
-            if (random.nextBoolean() && dificuldade > 1) {
-                obstaculos.add(new OvniAtirador(xPos, 0, velocidade));
-            } else {
-                String nomeImagem = nomesDeObstaculos[random.nextInt(nomesDeObstaculos.length)];
-                obstaculos.add(new Obstaculo(xPos, 0, velocidade, nomeImagem));
-            }
-        }
-        
-        List<Bullet> tirosParaRemover = new ArrayList<>();
-        List<Obstaculo> obstaculosParaRemover = new ArrayList<>();
-        for (Bullet tiro : tiros) {
-            for (Obstaculo obstaculo : obstaculos) {
-                if (tiro.getBounds().intersects(obstaculo.getBounds())) {
-                    tirosParaRemover.add(tiro);
-                    obstaculosParaRemover.add(obstaculo);
-                    explosoes.add(new Explosao(obstaculo.getX(), obstaculo.getY(), obstaculo.getLargura(), obstaculo.getAltura(), framesExplosao));
-                    long tempoAtual = System.currentTimeMillis();
-                    // CÓDIGO CORRIGIDO
-if (tempoAtual - ultimoTempoExplosao > DELAY_SOM_EXPLOSAO) {
-    // 1 em 16 chances (aprox. 1 para 15) de tocar o som wilhelm
-    if (random.nextInt(16) == 0) {
-        CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
-    } else { // As 15 chances restantes
-        CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
+    if (fundo1.getY() >= ALTURA) {
+        fundo1.setY(-fundo1.getAltura());
     }
-    ultimoTempoExplosao = tempoAtual;
-}
-                    score++;
-                }
+    if (fundo2.getY() >= ALTURA) {
+        fundo2.setY(-fundo2.getAltura());
+    }
+
+    // === LÓGICA DO ESCUDO E INVENCIBILIDADE ===
+    if (jogador instanceof Jet) {
+        Jet jetPlayer = (Jet) jogador;
+        if (jetPlayer.temEscudo() && (System.currentTimeMillis() - jetPlayer.getTempoAtivacaoEscudo() > jetPlayer.getDuracaoEscudo())) {
+            jetPlayer.desativarEscudo();
+        }
+    }
+    if (jogador.isInvencivel() && (System.currentTimeMillis() - jogador.getTempoInicioInvencibilidade() > jogador.getDuracaoInvencibilidade())) {
+        jogador.setInvencivel(false);
+    }
+    // ========================================
+
+    for (Explosao explosao : explosoes) {
+        explosao.atualizar();
+    }
+    explosoes.removeIf(Explosao::isAnimacaoConcluida);
+
+    for (Bullet tiro : tiros) {
+        tiro.mover();
+    }
+    tiros.removeIf(tiro -> tiro.getY() < 0);
+
+    for (Bullet tiro : tirosInimigos) {
+        tiro.mover();
+    }
+    tirosInimigos.removeIf(tiro -> tiro.getY() > ALTURA);
+
+    for (Obstaculo obstaculo : obstaculos) {
+        if (obstaculo instanceof OvniAtirador) {
+            OvniAtirador ovni = (OvniAtirador) obstaculo;
+            if (ovni.podeAtirar()) {
+                tirosInimigos.add(ovni.atirar());
             }
         }
-        tiros.removeAll(tirosParaRemover);
-        obstaculos.removeAll(obstaculosParaRemover);
+    }
 
-        List<Bullet> tirosInimigosRemover = new ArrayList<>();
-        for (Bullet tiroInimigo : tirosInimigos) {
-            if (jogador.getBounds().intersects(tiroInimigo.getBounds())) {
+    for (Obstaculo obstaculo : obstaculos) {
+        obstaculo.mover();
+    }
+    obstaculos.removeIf(obstaculo -> obstaculo.getY() > ALTURA);
+
+    for (PowerUp powerUp : powerUps) {
+        powerUp.mover();
+    }
+    powerUps.removeIf(powerUp -> powerUp.getY() > ALTURA);
+
+    if (random.nextInt(200) < 1) {
+        int xPos = random.nextInt(LARGURA - 40);
+        int velocidade = 1;
+        String nomeImagem = nomesDePowerUps[random.nextInt(nomesDePowerUps.length)];
+        powerUps.add(new PowerUp(xPos, 0, velocidade, nomeImagem));
+    }
+
+    if (random.nextInt(100) < 5 + dificuldade) {
+        int xPos = random.nextInt(LARGURA - 40);
+        int velocidade = random.nextInt(dificuldade) + 2;
+
+        if (random.nextBoolean() && dificuldade > 1) {
+            obstaculos.add(new OvniAtirador(xPos, 0, velocidade));
+        } else {
+            String nomeImagem = nomesDeObstaculos[random.nextInt(nomesDeObstaculos.length)];
+            obstaculos.add(new Obstaculo(xPos, 0, velocidade, nomeImagem));
+        }
+    }
+
+    List<Bullet> tirosParaRemover = new ArrayList<>();
+    List<Obstaculo> obstaculosParaRemover = new ArrayList<>();
+    for (Bullet tiro : tiros) {
+        for (Obstaculo obstaculo : obstaculos) {
+            if (tiro.getBounds().intersects(obstaculo.getBounds())) {
+                tirosParaRemover.add(tiro);
+                obstaculosParaRemover.add(obstaculo);
+                explosoes.add(new Explosao(obstaculo.getX(), obstaculo.getY(), obstaculo.getLargura(), obstaculo.getAltura(), framesExplosao));
+                tocarSomExplosao();
+                score++;
+            }
+        }
+    }
+    tiros.removeAll(tirosParaRemover);
+    obstaculos.removeAll(obstaculosParaRemover);
+
+    List<Bullet> tirosInimigosRemover = new ArrayList<>();
+    for (Bullet tiroInimigo : tirosInimigos) {
+        if (jogador.getBounds().intersects(tiroInimigo.getBounds())) {
+            // === LÓGICA DE COLISÃO COM TIRO INIMIGO ===
+            if (!jogador.isInvencivel()) {
                 if (jogador instanceof Jet && !((Jet) jogador).temEscudo()) {
                     jogador.perderSaude();
+                    explosoes.add(new Explosao(jogador.getX(), jogador.getY(), jogador.getLargura(), jogador.getAltura(), framesExplosao));
+                    tocarSomExplosao();
+                    if (jogador.getSaude() > 0) {
+                        reiniciarPosicaoJogador();
+                    }
                 }
-                tirosInimigosRemover.add(tiroInimigo);
-                explosoes.add(new Explosao(tiroInimigo.getX(), tiroInimigo.getY(), tiroInimigo.getLargura(), tiroInimigo.getAltura(), framesExplosao));
-                // CÓDIGO CORRIGIDO
-// 1 em 16 chances (aprox. 1 para 15) de tocar o som wilhelm
-if (random.nextInt(16) == 0) {
-    CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
-} else { // As 15 chances restantes
-    CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
-}
             }
+            // ==========================================
+            tirosInimigosRemover.add(tiroInimigo);
+            explosoes.add(new Explosao(tiroInimigo.getX(), tiroInimigo.getY(), tiroInimigo.getLargura(), tiroInimigo.getAltura(), framesExplosao));
         }
-        tirosInimigos.removeAll(tirosInimigosRemover);
+    }
+    tirosInimigos.removeAll(tirosInimigosRemover);
 
-        List<Obstaculo> obstaculosAtingidos = new ArrayList<>();
-        for (Obstaculo obstaculo : obstaculos) {
-            if (jogador.getBounds().intersects(obstaculo.getBounds())) {
+    List<Obstaculo> obstaculosAtingidos = new ArrayList<>();
+    for (Obstaculo obstaculo : obstaculos) {
+        if (jogador.getBounds().intersects(obstaculo.getBounds())) {
+            // === LÓGICA DE COLISÃO COM OBSTÁCULO ===
+            if (!jogador.isInvencivel()) {
                 if (jogador instanceof Jet && ((Jet) jogador).temEscudo()) {
                     obstaculosAtingidos.add(obstaculo);
                     explosoes.add(new Explosao(obstaculo.getX(), obstaculo.getY(), obstaculo.getLargura(), obstaculo.getAltura(), framesExplosao));
-                    // CÓDIGO CORRIGIDO
-// 1 em 16 chances (aprox. 1 para 15) de tocar o som wilhelm
-if (random.nextInt(16) == 0) {
-    CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
-} else { // As 15 chances restantes
-    CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
-}
+                    tocarSomExplosao();
                 } else {
                     jogador.perderSaude();
                     obstaculosAtingidos.add(obstaculo);
+                    explosoes.add(new Explosao(jogador.getX(), jogador.getY(), jogador.getLargura(), jogador.getAltura(), framesExplosao));
+                    tocarSomExplosao();
+                    if (jogador.getSaude() > 0) {
+                        reiniciarPosicaoJogador();
+                    }
                 }
+            } else { // Se o jogador está invencível, ele explode o obstáculo e não perde vida
+                obstaculosAtingidos.add(obstaculo);
+                explosoes.add(new Explosao(obstaculo.getX(), obstaculo.getY(), obstaculo.getLargura(), obstaculo.getAltura(), framesExplosao));
+                tocarSomExplosao();
             }
         }
-        obstaculos.removeAll(obstaculosAtingidos);
-
-        List<PowerUp> powerUpsColetados = new ArrayList<>();
-        for (PowerUp powerUp : powerUps) {
-            if (jogador.getBounds().intersects(powerUp.getBounds())) {
-                powerUpsColetados.add(powerUp);
-                if (powerUp.getNomeArquivo().equals("powerup_vida.png")) {
-                    ((Jet) jogador).aumentarSaude();
-                } else if (powerUp.getNomeArquivo().equals("powerup_escudo.png")) {
-                    ((Jet) jogador).ativarEscudo();
-                }
-            }
-        }
-        powerUps.removeAll(powerUpsColetados);
-
-        if (score > 0 && score / 10 >= dificuldade) {
-            dificuldade++;
-        }
-
-       if (jogador.getSaude() <= 0) {
-    gameLoop.stop();
-    // Passe o tipo da nave na chamada para showGameOver
-    game.showGameOver(score, this.tipoNave); 
-}
-
-        // Limite da esquerda
-if (jogador.getX() < 0) {
-    jogador.x = 0;
-}
-// Limite da direita
-if (jogador.getX() > LARGURA - jogador.largura) {
-    jogador.x = LARGURA - jogador.largura;
-}
-// Limite de cima
-if (jogador.getY() < 0) {
-    jogador.y = 0;
-}
-// Limite de baixo (CORRIGIDO)
-if (jogador.getY() > LIMITE_INFERIOR - jogador.altura) {
-    jogador.y = LIMITE_INFERIOR - jogador.altura;
-}
     }
+    obstaculos.removeAll(obstaculosAtingidos);
+
+    List<PowerUp> powerUpsColetados = new ArrayList<>();
+    for (PowerUp powerUp : powerUps) {
+        if (jogador.getBounds().intersects(powerUp.getBounds())) {
+            powerUpsColetados.add(powerUp);
+            if (powerUp.getNomeArquivo().equals("powerup_vida.png")) {
+                ((Jet) jogador).aumentarSaude();
+            } else if (powerUp.getNomeArquivo().equals("powerup_escudo.png")) {
+                ((Jet) jogador).ativarEscudo();
+            }
+        }
+    }
+    powerUps.removeAll(powerUpsColetados);
+
+    if (score > 0 && score / 10 >= dificuldade) {
+        dificuldade++;
+    }
+
+    if (jogador.getSaude() <= 0) {
+        gameLoop.stop();
+        game.showGameOver(score, this.tipoNave);
+    }
+
+    // Limites de tela
+    if (jogador.getX() < 0) {
+        jogador.x = 0;
+    }
+    if (jogador.getX() > LARGURA - jogador.largura) {
+        jogador.x = LARGURA - jogador.largura;
+    }
+    if (jogador.getY() < 0) {
+        jogador.y = 0;
+    }
+    if (jogador.getY() > LIMITE_INFERIOR - jogador.altura) {
+        jogador.y = LIMITE_INFERIOR - jogador.altura;
+    }
+}
+// ===============================================
+
+// === MÉTODOS ADICIONAIS NECESSÁRIOS ===
+private void reiniciarPosicaoJogador() {
+    jogador.setX(LARGURA / 2 - jogador.getLargura() / 2);
+    jogador.setY(ALTURA - 100);
+    jogador.setInvencivel(true);
+}
+
+private void tocarSomExplosao() {
+    long tempoAtual = System.currentTimeMillis();
+    if (tempoAtual - ultimoTempoExplosao > DELAY_SOM_EXPLOSAO) {
+        if (random.nextInt(16) == 0) {
+            CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
+        } else {
+            CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
+        }
+        ultimoTempoExplosao = tempoAtual;
+    }
+}
+
+   
 
     private class TecladoListener extends KeyAdapter {
         @Override

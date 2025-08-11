@@ -1,6 +1,6 @@
 package jetovnigame;
 
-import java.awt.Graphics2D; // IMPORT ADICIONADO
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.io.File;
@@ -15,8 +15,14 @@ public class Aeronave {
     protected int velocidade = 2;
     protected int vx = 0;
     protected int vy = 0;
-    private Image imagem;
-    
+    protected Image imagem; // Alterado para 'protected' para que o Jet possa acessá-lo
+
+    // === NOVAS VARIÁVEIS PARA INVENCIBILIDADE ===
+    protected boolean invencivel = false;
+    protected long tempoInicioInvencibilidade;
+    protected final long duracaoInvencibilidade = 5000; // 5 segundos
+    // ===========================================
+
     public Aeronave(int x, int y, String nomeImagem) {
         this.x = x;
         this.y = y;
@@ -24,16 +30,15 @@ public class Aeronave {
         carregarImagem(nomeImagem);
     }
     
-   private void carregarImagem(String nomeImagem) {
-    try {
-        // Redimensiona a imagem para 50x50 pixels (ajuste se preferir outro tamanho)
-        this.imagem = CarregadorDeImagens.carregarImagemRedimensionada(nomeImagem, 50, 50);
-        this.largura = imagem.getWidth(null);
-        this.altura = imagem.getHeight(null);
-    } catch (Exception e) {
-        e.printStackTrace();
+    private void carregarImagem(String nomeImagem) {
+        try {
+            this.imagem = CarregadorDeImagens.carregarImagemRedimensionada(nomeImagem, 50, 50);
+            this.largura = imagem.getWidth(null);
+            this.altura = imagem.getHeight(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-}
     
     public void mover() {
         this.x += vx;
@@ -49,8 +54,7 @@ public class Aeronave {
     public void pararMovimentoVertical() { vy = 0; }
     
     public Bullet atirar() {
-        // CORREÇÃO: Adiciona 'false' no construtor para indicar que NÃO é um tiro de inimigo
-    return new Bullet(x + largura / 2, y, "tiro.png", false); 
+        return new Bullet(x + largura / 2, y, "tiro.png", false);
     }
     
     public void perderSaude() {
@@ -72,4 +76,33 @@ public class Aeronave {
             g.drawImage(imagem, x, y, null);
         }
     }
+
+    // === NOVOS MÉTODOS PARA INVENCIBILIDADE ===
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public boolean isInvencivel() {
+        return invencivel;
+    }
+
+    public void setInvencivel(boolean invencivel) {
+        this.invencivel = invencivel;
+        if (invencivel) {
+            this.tempoInicioInvencibilidade = System.currentTimeMillis();
+        }
+    }
+
+    public long getTempoInicioInvencibilidade() {
+        return tempoInicioInvencibilidade;
+    }
+
+    public long getDuracaoInvencibilidade() {
+        return duracaoInvencibilidade;
+    }
+    // ===========================================
 }
