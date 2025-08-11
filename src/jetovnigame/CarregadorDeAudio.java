@@ -1,57 +1,64 @@
 package jetovnigame;
 
+import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import javax.sound.sampled.LineEvent;
 
 public class CarregadorDeAudio {
 
-    private static Map<String, Clip> clips = new HashMap<>();
-    private static Clip clipMusicaFundo; // NOVO: Variável para guardar a música de fundo
+    private static Clip clipMusicaFundo;
+    private static String musicaAtual = "";
 
-    public static void carregarClips() {
+    // Método para tocar um efeito sonoro
+    public static void tocarEfeitoSonoro(String nomeArquivo) {
         try {
-            clips.put("tiro.wav", AudioSystem.getClip());
-            clips.put("explosao.wav", AudioSystem.getClip());
-            clips.put("musica_fundo.wav", AudioSystem.getClip());
+            Clip clip = AudioSystem.getClip();
+            InputStream audioStream = CarregadorDeAudio.class.getResourceAsStream("/resources/" + nomeArquivo);
             
-            File tiroFile = new File("resources/tiro.wav");
-            File explosaoFile = new File("resources/explosao.wav");
-            File musicaFundoFile = new File("resources/musica_fundo.wav");
+            if (audioStream == null) {
+                System.err.println("Arquivo de som não encontrado: " + nomeArquivo);
+                return;
+            }
+
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(audioStream));
+            clip.open(audioInputStream);
+
+            clip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    clip.close();
+                }
+            });
             
-            clips.get("tiro.wav").open(AudioSystem.getAudioInputStream(tiroFile));
-            clips.get("explosao.wav").open(AudioSystem.getAudioInputStream(explosaoFile));
-            clips.get("musica_fundo.wav").open(AudioSystem.getAudioInputStream(musicaFundoFile));
+            clip.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
-    public static void tocarSom(String nomeArquivo) {
-        Clip clip = clips.get(nomeArquivo);
-        if (clip != null) {
-            clip.setFramePosition(0);
-            clip.start();
-        }
-    }
 
     public static void tocarMusicaDeFundo(String nomeArquivo) {
+        if (nomeArquivo.equals(musicaAtual)) {
+            return;
+        }
+
         try {
-            // CORREÇÃO: Para a música anterior antes de começar a nova
-            if (clipMusicaFundo != null && clipMusicaFundo.isRunning()) {
-                clipMusicaFundo.stop();
+            pararMusicaDeFundo();
+
+            InputStream audioStream = CarregadorDeAudio.class.getResourceAsStream("/resources/" + nomeArquivo);
+            if (audioStream == null) {
+                throw new FileNotFoundException("Arquivo não encontrado: " + nomeArquivo);
             }
-            
-            File file = new File("resources/" + nomeArquivo);
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file);
+
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(audioStream));
             clipMusicaFundo = AudioSystem.getClip();
             clipMusicaFundo.open(audioInputStream);
             clipMusicaFundo.loop(Clip.LOOP_CONTINUOUSLY);
-
+            musicaAtual = nomeArquivo;
         } catch (Exception e) {
+            System.err.println("Erro ao carregar ou tocar a música de fundo: " + nomeArquivo);
             e.printStackTrace();
         }
     }
@@ -59,6 +66,7 @@ public class CarregadorDeAudio {
     public static void pararMusicaDeFundo() {
         if (clipMusicaFundo != null && clipMusicaFundo.isRunning()) {
             clipMusicaFundo.stop();
+            clipMusicaFundo.close();
         }
     }
 }

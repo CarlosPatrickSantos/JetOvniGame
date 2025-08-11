@@ -99,7 +99,7 @@ public class GamePanel extends JPanel implements ActionListener {
         score = 0;
         dificuldade = 1;
 
-        CarregadorDeAudio.carregarClips();
+     
         CarregadorDeAudio.tocarMusicaDeFundo("musica_fundo.wav");
 
         fundo1 = new Fundo(0, 1, NOME_IMAGEM_FUNDO, this);
@@ -256,10 +256,16 @@ public class GamePanel extends JPanel implements ActionListener {
                     obstaculosParaRemover.add(obstaculo);
                     explosoes.add(new Explosao(obstaculo.getX(), obstaculo.getY(), obstaculo.getLargura(), obstaculo.getAltura(), framesExplosao));
                     long tempoAtual = System.currentTimeMillis();
-                    if (tempoAtual - ultimoTempoExplosao > DELAY_SOM_EXPLOSAO) {
-                        CarregadorDeAudio.tocarSom("explosao.wav");
-                        ultimoTempoExplosao = tempoAtual;
-                    }
+                    // CÓDIGO CORRIGIDO
+if (tempoAtual - ultimoTempoExplosao > DELAY_SOM_EXPLOSAO) {
+    // 1 em 16 chances (aprox. 1 para 15) de tocar o som wilhelm
+    if (random.nextInt(16) == 0) {
+        CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
+    } else { // As 15 chances restantes
+        CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
+    }
+    ultimoTempoExplosao = tempoAtual;
+}
                     score++;
                 }
             }
@@ -275,7 +281,13 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
                 tirosInimigosRemover.add(tiroInimigo);
                 explosoes.add(new Explosao(tiroInimigo.getX(), tiroInimigo.getY(), tiroInimigo.getLargura(), tiroInimigo.getAltura(), framesExplosao));
-                CarregadorDeAudio.tocarSom("explosao.wav");
+                // CÓDIGO CORRIGIDO
+// 1 em 16 chances (aprox. 1 para 15) de tocar o som wilhelm
+if (random.nextInt(16) == 0) {
+    CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
+} else { // As 15 chances restantes
+    CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
+}
             }
         }
         tirosInimigos.removeAll(tirosInimigosRemover);
@@ -286,7 +298,13 @@ public class GamePanel extends JPanel implements ActionListener {
                 if (jogador instanceof Jet && ((Jet) jogador).temEscudo()) {
                     obstaculosAtingidos.add(obstaculo);
                     explosoes.add(new Explosao(obstaculo.getX(), obstaculo.getY(), obstaculo.getLargura(), obstaculo.getAltura(), framesExplosao));
-                    CarregadorDeAudio.tocarSom("explosao.wav");
+                    // CÓDIGO CORRIGIDO
+// 1 em 16 chances (aprox. 1 para 15) de tocar o som wilhelm
+if (random.nextInt(16) == 0) {
+    CarregadorDeAudio.tocarEfeitoSonoro("wilhelm.wav");
+} else { // As 15 chances restantes
+    CarregadorDeAudio.tocarEfeitoSonoro("explosao.wav");
+}
                 } else {
                     jogador.perderSaude();
                     obstaculosAtingidos.add(obstaculo);
@@ -358,7 +376,7 @@ if (jogador.getY() > LIMITE_INFERIOR - jogador.altura) {
                 Bullet novoTiro = jogador.atirar();
                 if (novoTiro != null) {
                     tiros.add(novoTiro);
-                    CarregadorDeAudio.tocarSom("tiro.wav");
+                    CarregadorDeAudio.tocarEfeitoSonoro("tiro.wav");
                 }
             }
         }
